@@ -18,44 +18,59 @@
     width: 100vw;
     height: 100vh;
   }
+
   #ui {
     position: fixed;
-    top: 10px;
-    left: 10px;
-    background: rgba(0, 0, 30, 0.85);
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #4a90e2;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 30, 0.92);
+    border-top: 2px solid #4a90e2;
+    padding: 10px 15px;
     z-index: 10;
-    max-width: 280px;
-    font-size: 14px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    flex-wrap: nowrap;
   }
+
   #ui h2 {
-    font-size: 16px;
-    margin-bottom: 10px;
+    font-size: 14px;
     color: #4a90e2;
+    margin: 0;
+    white-space: nowrap;
   }
+
   #location-status {
     background: #111;
-    padding: 8px;
+    padding: 6px 10px;
     border-radius: 5px;
-    margin-bottom: 10px;
-    font-size: 13px;
+    font-size: 12px;
     border-left: 3px solid #4a90e2;
+    white-space: nowrap;
+    min-width: 150px;
   }
   #location-status.loading { border-left-color: #f39c12; }
   #location-status.success { border-left-color: #2ecc71; }
   #location-status.error { border-left-color: #e74c3c; }
+
+  .buttons-group {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
   button {
     background: #4a90e2;
     color: #fff;
     border: none;
-    padding: 10px;
+    padding: 8px 12px;
     border-radius: 5px;
-    margin-top: 8px;
     cursor: pointer;
-    width: 100%;
-    font-size: 14px;
+    font-size: 13px;
+    white-space: nowrap;
   }
   button:hover { background: #357abd; }
   button.equator {
@@ -66,35 +81,63 @@
   button.equator.active {
     background: #f39c12;
   }
-  #info {
-    position: fixed;
-    bottom: 10px;
-    left: 10px;
-    background: rgba(0, 0, 30, 0.85);
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 12px;
-    z-index: 10;
-    max-width: 280px;
-  }
+
   #time-control {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
   #time-control label {
     font-size: 12px;
     color: #aaa;
+    white-space: nowrap;
   }
-  #time-control input[type="range"] {
-    width: 100%;
-    margin-top: 4px;
+  #time-slider {
+    width: 120px;
   }
   #time-display {
-    text-align: center;
     font-size: 13px;
     color: #4a90e2;
-    margin-top: 4px;
+    min-width: 45px;
+    text-align: center;
+  }
+  #btn-now {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  #info {
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 30, 0.75);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    z-index: 10;
+    border: 1px solid #4a90e2;
+    text-align: center;
+  }
+
+  @media (max-width: 900px) {
+    #ui {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+    #location-status {
+      min-width: auto;
+    }
+    .buttons-group {
+      width: 100%;
+      justify-content: center;
+    }
+    #time-control {
+      width: 100%;
+      justify-content: center;
+    }
   }
 </style>
 </head>
@@ -102,42 +145,57 @@
 
 <div id="canvas-container"></div>
 
+<div id="info">
+  <div id="constellation-info">Toca una estrella para ver su nombre</div>
+</div>
+
 <div id="ui">
-  <h2>🌌 Cielo en Vivo</h2>
-  
-  <div id="location-status" class="loading">
-    📡 Obteniendo tu ubicación...
+  <div>
+    <h2>🌌 Cielo en Vivo</h2>
+    <div id="location-status" class="loading">📡 Obteniendo...</div>
   </div>
 
-  <button id="btn-equator" class="equator">
-    🌐 Ver TODAS las constelaciones (Ecuador)
-  </button>
-
-  <button id="btn-mylocation">
-    📍 Volver a mi ubicación
-  </button>
+  <div class="buttons-group">
+    <button id="btn-equator" class="equator">🌐 Ecuador (todas)</button>
+    <button id="btn-mylocation">📍 Mi ubicación</button>
+  </div>
 
   <div id="time-control">
     <label>Hora:</label>
     <input type="range" id="time-slider" min="0" max="24" step="0.1" value="22">
     <div id="time-display">22:00</div>
-    <button id="btn-now">⏱️ Hora actual</button>
+    <button id="btn-now">⏱️ Ahora</button>
   </div>
-</div>
-
-<div id="info">
-  <div id="constellation-info">Toca una estrella para ver su nombre</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ============ CONFIGURACIÓN 3D ============
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 2000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 camera.position.set(0, 0, 0.1);
+
+// ============ TEXTURA DE BRILLO PARA ESTRELLAS ============
+function createGlowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+  gradient.addColorStop(0.5, 'rgba(200, 220, 255, 0.3)');
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 64, 64);
+  const texture = new THREE.CanvasTexture(canvas);
+  return texture;
+}
+
+const glowTexture = createGlowTexture();
 
 // ============ ESTRELLAS BRILLANTES ============
 const brightStars = [
@@ -186,34 +244,47 @@ function raDecToXYZ(raHours, decDeg, radius) {
   return new THREE.Vector3(x, y, z);
 }
 
-// ============ FONDO DE ESTRELLAS ============
+// ============ FONDO DE ESTRELLAS PEQUEÑAS ============
 const starGeometry = new THREE.BufferGeometry();
 const starPositions = [];
-for (let i = 0; i < 3000; i++) {
+for (let i = 0; i < 4000; i++) {
   const ra = Math.random() * 24;
   const dec = (Math.random() * 180) - 90;
-  const pos = raDecToXYZ(ra, dec, 500);
+  const pos = raDecToXYZ(ra, dec, 300);
   starPositions.push(pos.x, pos.y, pos.z);
 }
 starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
-const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8 });
+const starMaterial = new THREE.PointsMaterial({ 
+  color: 0xffffff, 
+  size: 1.5,
+  sizeAttenuation: true
+});
 scene.add(new THREE.Points(starGeometry, starMaterial));
 
-// ============ ESTRELLAS BRILLANTES EN 3D ============
+// ============ ESTRELLAS BRILLANTES CON BRILLO ============
 const starMeshes = [];
 brightStars.forEach((star, idx) => {
   const [name, ra, dec, mag] = star;
-  const pos = raDecToXYZ(ra, dec, 500);
-  const size = Math.max(2, 8 - mag * 2);
-  const geometry = new THREE.SphereGeometry(size, 16, 16);
-  const material = new THREE.MeshBasicMaterial({
-    color: mag < 0 ? 0xaaccff : (mag < 1 ? 0xffffff : 0xffeecc)
+  const pos = raDecToXYZ(ra, dec, 300);
+  
+  // Tamaño basado en magnitud: más brillante = más grande
+  const baseSize = Math.max(8, 25 - mag * 8);
+  
+  // Material con textura de brillo
+  const material = new THREE.SpriteMaterial({
+    map: glowTexture,
+    color: mag < 0 ? 0xaaddff : (mag < 1 ? 0xffffff : 0xffeedd),
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
   });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.copy(pos);
-  mesh.userData = { name, constellation: findConstellation(idx) };
-  scene.add(mesh);
-  starMeshes.push(mesh);
+  
+  const sprite = new THREE.Sprite(material);
+  sprite.position.copy(pos);
+  sprite.scale.set(baseSize, baseSize, 1);
+  sprite.userData = { name, constellation: findConstellation(idx) };
+  scene.add(sprite);
+  starMeshes.push(sprite);
 });
 
 function findConstellation(starIdx) {
@@ -226,19 +297,19 @@ function findConstellation(starIdx) {
 // ============ LÍNEAS DE CONSTELACIONES ============
 Object.values(constellations).forEach(c => {
   c.lines.forEach(([a, b]) => {
-    const posA = raDecToXYZ(brightStars[a][1], brightStars[a][2], 500);
-    const posB = raDecToXYZ(brightStars[b][1], brightStars[b][2], 500);
+    const posA = raDecToXYZ(brightStars[a][1], brightStars[a][2], 300);
+    const posB = raDecToXYZ(brightStars[b][1], brightStars[b][2], 300);
     const geometry = new THREE.BufferGeometry().setFromPoints([posA, posB]);
-    const material = new THREE.LineBasicMaterial({ color: 0x4a90e2, opacity: 0.6, transparent: true });
+    const material = new THREE.LineBasicMaterial({ color: 0x4a90e2, opacity: 0.5, transparent: true });
     scene.add(new THREE.Line(geometry, material));
   });
 });
 
 // ============ VARIABLES DE UBICACIÓN Y HORA ============
-let currentLat = 0; // Empezar en ecuador por defecto
+let currentLat = 0;
 let currentLon = 0;
 let currentTime = 22;
-let isEquatorMode = true; // Modo ecuador activo por defecto
+let isEquatorMode = true;
 let userLat = null;
 let userLon = null;
 
@@ -253,11 +324,10 @@ const constellationInfo = document.getElementById('constellation-info');
 // ============ DETECCIÓN AUTOMÁTICA DE UBICACIÓN ============
 function detectLocation() {
   locationStatus.className = 'loading';
-  locationStatus.textContent = '📡 Obteniendo tu ubicación...';
+  locationStatus.textContent = '📡 Obteniendo...';
   
   if (!navigator.geolocation) {
-    // Si no hay soporte de geolocalización, activar modo ecuador
-    activateEquatorMode('❌ Tu navegador no soporta ubicación.<br>Mostrando todas las constelaciones desde el Ecuador.');
+    activateEquatorMode('❌ Sin soporte de ubicación');
     return;
   }
 
@@ -272,21 +342,16 @@ function detectLocation() {
       const lonLabel = userLon >= 0 ? `${userLon.toFixed(2)}°E` : `${Math.abs(userLon).toFixed(2)}°W`;
       
       locationStatus.className = 'success';
-      locationStatus.innerHTML = `📍 <strong>Tu ubicación:</strong><br>${latLabel}, ${lonLabel}`;
+      locationStatus.innerHTML = `📍 ${latLabel}, ${lonLabel}`;
       
       isEquatorMode = false;
       btnEquator.classList.remove('active');
     },
     (error) => {
-      // Si rechaza el permiso o hay error, activar modo ecuador automáticamente
-      let msg = '🌐 <strong>Modo Ecuador (0°)</strong><br>';
-      if (error.code === 1) {
-        msg += 'Permiso denegado. Viendo todas las constelaciones.';
-      } else if (error.code === 2) {
-        msg += 'Ubicación no disponible. Viendo todas las constelaciones.';
-      } else if (error.code === 3) {
-        msg += 'Tiempo de espera. Viendo todas las constelaciones.';
-      }
+      let msg = '🌐 Ecuador (0°)';
+      if (error.code === 1) msg = '🌐 Permiso denegado';
+      else if (error.code === 2) msg = '🌐 Ubicación no disponible';
+      else if (error.code === 3) msg = '🌐 Tiempo agotado';
       
       activateEquatorMode(msg);
     },
@@ -294,7 +359,6 @@ function detectLocation() {
   );
 }
 
-// ============ FUNCIÓN: Activar modo ecuador ============
 function activateEquatorMode(message) {
   currentLat = 0;
   currentLon = 0;
@@ -306,12 +370,10 @@ function activateEquatorMode(message) {
   btnEquator.classList.add('active');
 }
 
-// ============ BOTÓN ECUADOR ============
 btnEquator.addEventListener('click', () => {
-  activateEquatorMode('🌐 <strong>Modo Ecuador (0°)</strong><br>Viendo TODAS las constelaciones');
+  activateEquatorMode('🌐 Ecuador (0°)');
 });
 
-// ============ BOTÓN VOLVER A MI UBICACIÓN ============
 btnMyLocation.addEventListener('click', () => {
   if (userLat !== null) {
     currentLat = userLat;
@@ -322,7 +384,7 @@ btnMyLocation.addEventListener('click', () => {
     const lonLabel = userLon >= 0 ? `${userLon.toFixed(2)}°E` : `${Math.abs(userLon).toFixed(2)}°W`;
     
     locationStatus.className = 'success';
-    locationStatus.innerHTML = `📍 <strong>Tu ubicación:</strong><br>${latLabel}, ${lonLabel}`;
+    locationStatus.innerHTML = `📍 ${latLabel}, ${lonLabel}`;
     
     btnEquator.classList.remove('active');
   } else {
@@ -330,7 +392,6 @@ btnMyLocation.addEventListener('click', () => {
   }
 });
 
-// ============ CONTROL DE HORA ============
 timeSlider.addEventListener('input', (e) => {
   currentTime = parseFloat(e.target.value);
   updateTimeDisplay();
@@ -349,7 +410,6 @@ function updateTimeDisplay() {
   timeDisplay.textContent = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
 }
 
-// ============ ROTACIÓN DEL CIELO ============
 function updateSkyRotation() {
   const hourAngle = (currentTime / 24) * Math.PI * 2;
   scene.rotation.y = -hourAngle;
@@ -373,23 +433,20 @@ renderer.domElement.addEventListener('click', (event) => {
   }
 });
 
-// ============ ANIMACIÓN ============
 function animate() {
   requestAnimationFrame(animate);
   updateSkyRotation();
   renderer.render(scene, camera);
 }
 
-// ============ RESPONSIVE ============
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// ============ INICIO ============
 updateTimeDisplay();
-detectLocation(); // Detecta ubicación automáticamente al cargar
+detectLocation();
 animate();
 </script>
 </body>
